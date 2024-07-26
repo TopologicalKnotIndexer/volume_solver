@@ -6,7 +6,7 @@ import signal
 from snappy     import Manifold
 from to_dt_code import to_dt_code
 
-EPS = 1e-6
+EPS = 1e-5
 
 def timeout_handler(signum, frame): # 抛出超时异常
     raise Exception("timeout")
