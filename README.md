@@ -15,5 +15,5 @@
 
 - `python3 ./src/main.py`
   - 向标准输入流输入一个合法的 PD_CODE （程序不对合法性进行检查）
-  - 如果扭结是 hyperbolic knot，则程序向标准输出流输出一个扭结补空间的体积（如果不是 hypobolic 扭结程序可能不能停机）
+  - 如果扭结是 hyperbolic knot，则程序向标准输出流输出一个扭结补空间的体积（如果不是 hypobolic 扭结程序，程序输出 `non_hyperbolic`）
 
