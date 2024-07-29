@@ -6,7 +6,7 @@ import signal
 from snappy     import Manifold
 from to_dt_code import to_dt_code
 
-# 2024-07-30 删除了对 volume 之趋近于零的判断
+EPS = 1e-5
 
 def raw_get_volume(pd_code: list) -> float:
     manifold = Manifold("DT:[%s]" % str(to_dt_code(pd_code)))
@@ -18,6 +18,9 @@ def get_volume(pd_code) -> float|str: # 计算扭结补空间体积
         ans = raw_get_volume(pd_code)
     except:
         pass
+    if abs(ans) < EPS: # 2024-07-30 又把这个判断加回来了
+        ans = 0.000
+    assert ans >= 0
     return max(ans, 0.000) # 当计算出错时，返回 0.000
 
 if __name__ == "__main__":
