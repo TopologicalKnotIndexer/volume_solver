@@ -6,21 +6,19 @@ import signal
 from snappy     import Manifold
 from to_dt_code import to_dt_code
 
-EPS = 1e-5
+# 2024-07-30 删除了对 volume 之趋近于零的判断
 
 def raw_get_volume(pd_code: list) -> float:
     manifold = Manifold("DT:[%s]" % str(to_dt_code(pd_code)))
-    return float(manifold.volume())
+    return float(manifold.with_hyperbolic_structure().volume())
 
 def get_volume(pd_code) -> float|str: # 计算扭结补空间体积
-    ans = "non_hyperbolic"
+    ans = 0.000
     try:
         ans = raw_get_volume(pd_code)
     except:
         pass
-    if isinstance(ans, float) and abs(ans) < EPS: # 特别接近零的视为 non_hyperbolic
-        ans = "non_hyperbolic"
-    return ans
+    return max(ans, 0.000) # 当计算出错时，返回 0.000
 
 if __name__ == "__main__":
     print(get_volume([[1, 5, 2, 4], [3, 1, 4, 6], [5, 3, 6, 2]]))
