@@ -1,15 +1,12 @@
 # 如何处理超时机制
 # https://stackoverflow.com/questions/492519/timeout-on-a-function-call
-# works on Unix Like OS
-import signal
-
-from snappy     import Manifold
+from portable_snappy import snappy
 from to_dt_code import to_dt_code
 
 EPS = 1e-5
 
 def raw_get_volume(pd_code: list) -> float:
-    manifold = Manifold("DT:[%s]" % str(to_dt_code(pd_code)))
+    manifold = snappy.Manifold("DT:[%s]" % str(to_dt_code(pd_code)))
     return float(manifold.with_hyperbolic_structure().volume())
 
 def get_volume(pd_code) -> float|str: # 计算扭结补空间体积

@@ -1,7 +1,6 @@
 import os
 import shlex
 from subprocess import Popen, PIPE
-from snappy     import Manifold
 from threading import Timer
 PYTHON3_PATH = "python3"
 DIRNOW       = os.path.dirname(os.path.abspath(__file__))
