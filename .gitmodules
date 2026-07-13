@@ -1,3 +1,0 @@
-[submodule "src/pd_code_to_dt_code"]
-	path = src/pd_code_to_dt_code
-	url = git@github.com:TopologicalKnotIndexer/pd_code_to_dt_code.git

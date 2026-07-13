@@ -1,32 +1,64 @@
+"""Run volume_solver in an isolated process with a hard timeout."""
+
+from pathlib import Path
+import math
 import os
-import shlex
-from subprocess import Popen, PIPE
-from threading import Timer
-PYTHON3_PATH = "python3"
-DIRNOW       = os.path.dirname(os.path.abspath(__file__))
-EXECFILE     = os.path.join(DIRNOW, "main.py")
-TIMEOUT      = 15 # 15s to timeout
+import subprocess
+import sys
 
-def run(cmd, inp:str, timeout_sec) -> float|str:
-    proc  = Popen(shlex.split(cmd), stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    timer = Timer(timeout_sec, proc.kill)
-    ans   = "non_hyperbolic"
+
+EXECFILE = Path(__file__).resolve().parent / "main.py"
+TIMEOUT = 15.0
+
+
+def run(
+    command: list[str], input_text: str, timeout_sec: float
+) -> float:
+    """Run a solver command and return its validated numeric output."""
+
+    if timeout_sec <= 0:
+        raise ValueError("timeout_sec must be positive")
+    completed = subprocess.run(
+        command,
+        input=input_text,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout_sec,
+        check=False,
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        raise RuntimeError(
+            f"volume solver failed with exit code {completed.returncode}: "
+            f"{detail or 'no diagnostic output'}"
+        )
     try:
-        timer.start()
-        stdout, stderr = proc.communicate((inp + "\n").encode("utf-8"))
-        ans = stdout.decode().strip()
-    finally:
-        timer.cancel()
-    if ans == "": # 处理程序检测到异常的情况
-        ans = "non_hyperbolic"
-    if ans != "non_hyperbolic": # 试图将浮点数信息还原出来
-        ans = float(ans)
-    return ans
+        value = float(completed.stdout.strip())
+    except ValueError as exc:
+        raise RuntimeError(f"volume solver returned invalid output: {completed.stdout!r}") from exc
+    if not math.isfinite(value) or value < 0:
+        raise RuntimeError(f"volume solver returned an invalid volume: {value!r}")
+    return value
 
-def get_volume_safe(pd_code:list) -> float|str:
-    return run('"%s" "%s"' % (PYTHON3_PATH, EXECFILE), str(pd_code), TIMEOUT)
+
+def get_volume_safe(
+    pd_code: list[list[int]],
+    *,
+    timeout: float = TIMEOUT,
+    python_path: str | os.PathLike[str] | None = None,
+    verified: bool = False,
+    bits_prec: int = 80,
+) -> float:
+    """Compute a volume in a child process and enforce *timeout*."""
+
+    executable = os.fspath(python_path) if python_path is not None else sys.executable
+    command = [executable, str(EXECFILE), "--bits-prec", str(bits_prec)]
+    if verified:
+        command.append("--verified")
+    return run(command, repr(pd_code), timeout)
+
 
 if __name__ == "__main__":
-    print(get_volume_safe([[4, 2, 5, 1], [8, 6, 1, 5], [6, 3, 7, 4], [2, 7, 3, 8]]))
     print(get_volume_safe([[1, 5, 2, 4], [3, 1, 4, 6], [5, 3, 6, 2]]))
-    print(get_volume_safe([[4, 2, 5, 1], [15, 22, 16, 1], [10, 3, 11, 4], [2, 11, 3, 12], [9, 17, 10, 16], [7, 19, 8, 18], [17, 9, 18, 8], [19, 13, 20, 12], [5, 14, 6, 15], [13, 21, 14, 20], [21, 7, 22, 6]]))
